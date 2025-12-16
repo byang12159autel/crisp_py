@@ -1,19 +1,10 @@
-Full insertion
+Home Pose
 --- Current Robot State ---
-Joint Positions: [ 0.0230038   0.3428838  -0.0359825  -2.529788    0.03308011  2.8802805
-  0.78423095]
-End-Effector Position: [ 0.45506368 -0.00945191  0.04498747]
-End-Effector Orientation (quaternion): [ 0.99977427 -0.0207955   0.00399234  0.00173555]
-End-Effector Orientation (Euler XYZ degrees): [179.81067291  -0.46152621  -2.3824206 ]
----------------------------
-
-Approaching hole
---- Current Robot State ---
-Joint Positions: [ 0.02258485  0.21163805 -0.04094419 -2.71751     0.03309597  2.9137363
-  0.78436273]
-End-Effector Position: [ 0.39329999 -0.01051764  0.05499903]
-End-Effector Orientation (quaternion): [ 9.99673971e-01 -2.43814738e-02 -7.55767734e-03  6.14177326e-04]
-End-Effector Orientation (Euler XYZ degrees): [179.90851749   0.86408047  -2.79495816]
+Joint Positions: [ 0.5185366  -0.28910798  0.33884725 -1.0532444   0.17898294  2.271152
+  0.78513587]
+End-Effector Position: [0.21410979 0.37285984 1.05776812]
+End-Effector Orientation (quaternion): [ 0.65571234  0.3342023   0.5933008  -0.32610474]
+End-Effector Orientation (Euler XYZ degrees): [-159.52877581  -84.8988165    35.25627904]
 
 Transition node
 --- Current Robot State ---
@@ -23,11 +14,22 @@ End-Effector Position: [ 0.39329999 -0.01051764  0.05499903]
 End-Effector Orientation (quaternion): [ 9.99673971e-01 -2.43814738e-02 -7.55767734e-03  6.14177326e-04]
 End-Effector Orientation (Euler XYZ degrees): [179.90851749   0.86408047  -2.79495816]
 
-Home Pose
+Approaching hole
 --- Current Robot State ---
-Joint Positions: [ 0.5185366  -0.28910798  0.33884725 -1.0532444   0.17898294  2.271152
-  0.78513587]
-End-Effector Position: [0.21410979 0.37285984 1.05776812]
-End-Effector Orientation (quaternion): [ 0.65571234  0.3342023   0.5933008  -0.32610474]
-End-Effector Orientation (Euler XYZ degrees): [-159.52877581  -84.8988165    35.25627904]
+Joint Positions: [ 0.02258485  0.21163805 -0.04094419 -2.71751     0.03309597  2.9137363
+  0.78436273]
+End-Effector Position: [ 0.39329999 -0.01051764  0.05499903]
+End-Effector Orientation (quaternion): [ 9.99673971e-01 -2.43814738e-02 -7.55767734e-03  6.14177326e-04]
+End-Effector Orientation (Euler XYZ degrees): [179.90851749   0.86408047  -2.79495816]
+
+Full insertion
+--- Current Robot State ---
+Joint Positions: [ 0.0230038   0.3428838  -0.0359825  -2.529788    0.03308011  2.8802805
+  0.78423095]
+End-Effector Position: [ 0.45506368 -0.00945191  0.04498747]
+End-Effector Orientation (quaternion): [ 0.99977427 -0.0207955   0.00399234  0.00173555]
+End-Effector Orientation (Euler XYZ degrees): [179.81067291  -0.46152621  -2.3824206 ]
+---------------------------
+
+
 
