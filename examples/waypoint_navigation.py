@@ -17,7 +17,12 @@ from scipy.spatial.transform import Rotation
 nodes = {
     "Storage":
         Pose(
-        position=np.array([0.0, 0.09, 0.314]),
+        position=np.array([0.0, 0.09, 0.35]),
+        orientation=Rotation.from_euler('xyz', [-180.0,  52.1,    90.1], degrees=True)
+        ),
+    "Transition0":
+        Pose(
+        position=np.array([0.2, 0.10, 0.35]),
         orientation=Rotation.from_euler('xyz', [-180.0,  52.1,    90.1], degrees=True)
         ),
     "Transition":
@@ -200,6 +205,7 @@ waypoint_path = [
     # APPROACH HOLE
     nodes.get("Storage"),
     nodes.get("Pause"),
+    nodes.get("Transition0"),
     nodes.get("Transition"),
     nodes.get("Transition2"),
     nodes.get("ReadyInsert"),
@@ -213,6 +219,7 @@ waypoint_path = [
     {"switch_config": "config/control/clipped_cartesian_impedance.yaml"},
     nodes.get("Transition2"),
     nodes.get("Transition"),
+    nodes.get("Transition0"),
     nodes.get("Storage"),
 ]
 
