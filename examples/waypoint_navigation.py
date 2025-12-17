@@ -243,7 +243,7 @@ for i, waypoint in enumerate(waypoint_path, 1):
 
             # Apply 1N force in X direction (insertion direction)
             print("Applying 1N force in X direction (insertion direction)...")
-            robot.set_target_wrench(force=np.array([1.5, 0.0, 0.0]), torque=np.array([0.0, 0.0, 0.0]))
+            robot.set_target_wrench(force=np.array([2.0, 0.0, 0.0]), torque=np.array([0.0, 0.0, 0.0]))
             
             continue
         elif "switch_config" in waypoint:
