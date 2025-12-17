@@ -72,20 +72,26 @@ print("="*70)
 
 waypoint_path = [
     nodes.get("ReadyInsert"),
+    {"switch_config": "config/control/gravity_compensation_peginhole.yaml"},
     nodes.get("FullInsert"),
     nodes.get("Pause"),
-    nodes.get("ReadyInsert"),
 ]
 
 
 print(f"\nNavigating through {len(waypoint_path)} full pose waypoints...")
 for i, waypoint in enumerate(waypoint_path, 1):
 
-    # Check if waypoint is a dictionary with a sleep command
-    if isinstance(waypoint, dict) and "sleep" in waypoint:
-        print(f"Pausing for {waypoint['sleep']} seconds...")
-        time.sleep(waypoint["sleep"])
-        continue
+    # Check if waypoint is a dictionary with a command
+    if isinstance(waypoint, dict):
+        if "sleep" in waypoint:
+            print(f"Pausing for {waypoint['sleep']} seconds...")
+            time.sleep(waypoint["sleep"])
+            continue
+        elif "switch_config" in waypoint:
+            config_path = waypoint["switch_config"]
+            print(f"Switching to config: {config_path}")
+            robot.cartesian_controller_parameters_client.load_param_config(file_path=config_path)
+            continue
 
     # Otherwise it's a Pose object
     euler = waypoint.orientation.as_euler('xyz')
