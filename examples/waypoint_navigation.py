@@ -154,9 +154,6 @@ print(f"Starting pose: {robot.end_effector_pose.position}")
 print(f"Starting orientation (euler xyz): {robot.end_effector_pose.orientation.as_euler('xyz')}")
 
 
-# ======================================================================
-# Full pose waypoints (position + orientation)
-# ======================================================================
 print("\n" + "="*70)
 print("Full pose waypoints with orientation control")
 print("="*70)
@@ -165,11 +162,21 @@ print("="*70)
 trajectory_data = TrajectoryData()
 collection_thread = None
 
-###### APPROACH HOLE ######
 waypoint_path = [
+    # APPROACH HOLE
     nodes.get("Transition"),
     nodes.get("Transition2"),
     nodes.get("ReadyInsert"),
+    nodes.get("Pause"),
+    # HOLE INSERTION
+    {"switch_config_compliant": "config/control/gravity_compensation_peginhole.yaml"},
+    nodes.get("FullInsert"),
+    nodes.get("Pause"),
+    nodes.get("ReadyInsert"),
+    # RETRACTION
+    {"switch_config": "config/control/clipped_cartesian_impedance.yaml"},
+    nodes.get("Transition2"),
+    nodes.get("Transition"),
 ]
 
 print(f"\nNavigating through {len(waypoint_path)} full pose waypoints...")
@@ -183,39 +190,6 @@ collection_thread = threading.Thread(
     daemon=True
 )
 collection_thread.start()
-for i, waypoint in enumerate(waypoint_path, 1):
-
-    # Otherwise it's a Pose object
-    euler = waypoint.orientation.as_euler('xyz')
-    print(f"\n  Moving to waypoint {i}/{len(waypoint_path)}:")
-    print(f"    Position: {waypoint.position}")
-    print(f"    Orientation (euler xyz): {euler}")
-    
-    # Update target position for trajectory tracking
-    trajectory_data.update_target(waypoint.position)
-    
-    robot.move_to(pose=waypoint, speed=speed)
-    time.sleep(0.5)
-    
-    current_pos = robot.end_effector_pose.position
-    current_euler = robot.end_effector_pose.orientation.as_euler('xyz')
-    pos_error = np.linalg.norm(current_pos - waypoint.position)
-    ori_error = np.linalg.norm(current_euler - euler)
-    print(f"  Reached waypoint {i}. Position error: {pos_error:.4f} m, Orientation error: {ori_error:.4f} rad")
-
-time.sleep(5)
-
-###### HOLE INSERTION ######
-waypoint_path = [
-    {"switch_config": "config/control/gravity_compensation_peginhole.yaml"},
-    nodes.get("FullInsert"),
-    nodes.get("Pause"),
-    nodes.get("ReadyInsert"),
-]
-
-print("\n" + "="*70)
-print("Starting insertion with trajectory tracking...")
-print("="*70)
 
 for i, waypoint in enumerate(waypoint_path, 1):
 
@@ -225,8 +199,8 @@ for i, waypoint in enumerate(waypoint_path, 1):
             print(f"Pausing for {waypoint['sleep']} seconds...")
             time.sleep(waypoint["sleep"])
             continue
-        elif "switch_config" in waypoint:
-            config_path = waypoint["switch_config"]
+        elif "switch_config_compliant" in waypoint:
+            config_path = waypoint["switch_config_compliant"]
             print(f"Switching to config: {config_path}")
             robot.cartesian_controller_parameters_client.load_param_config(file_path=config_path)
 
@@ -236,6 +210,12 @@ for i, waypoint in enumerate(waypoint_path, 1):
             # Apply 1N force in X direction (insertion direction)
             print("Applying 1N force in X direction (insertion direction)...")
             robot.set_target_wrench(force=np.array([1.5, 0.0, 0.0]), torque=np.array([0.0, 0.0, 0.0]))
+            
+            continue
+        elif "switch_config" in waypoint:
+            config_path = waypoint["switch_config"]
+            print(f"Switching to config: {config_path}")
+            robot.cartesian_controller_parameters_client.load_param_config(file_path=config_path)
             
             continue
 
@@ -256,42 +236,11 @@ for i, waypoint in enumerate(waypoint_path, 1):
     pos_error = np.linalg.norm(current_pos - waypoint.position)
     ori_error = np.linalg.norm(current_euler - euler)
     print(f"  Reached waypoint {i}. Position error: {pos_error:.4f} m, Orientation error: {ori_error:.4f} rad")
-    
-    # Clear force and stop recording after insertion completes
+
+    # Clear force after insertion completes
     if waypoint is nodes["FullInsert"]:
         print("Clearing insertion force...")
         robot.set_target_wrench(force=np.array([0.0, 0.0, 0.0]), torque=np.array([0.0, 0.0, 0.0]))
-
-
-###### RETRACTION ######
-print("Switching back to default Cartesian impedance control...")
-robot.cartesian_controller_parameters_client.load_param_config(
-    file_path="config/control/clipped_cartesian_impedance.yaml"
-)
-
-waypoint_path = [
-    nodes.get("Transition2"),
-    nodes.get("Transition"),
-]
-for i, waypoint in enumerate(waypoint_path, 1):
-
-    # Otherwise it's a Pose object
-    euler = waypoint.orientation.as_euler('xyz')
-    print(f"\n  Moving to waypoint {i}/{len(waypoint_path)}:")
-    print(f"    Position: {waypoint.position}")
-    print(f"    Orientation (euler xyz): {euler}")
-    
-    # Update target position for trajectory tracking
-    trajectory_data.update_target(waypoint.position)
-    
-    robot.move_to(pose=waypoint, speed=speed)
-    time.sleep(0.5)
-    
-    current_pos = robot.end_effector_pose.position
-    current_euler = robot.end_effector_pose.orientation.as_euler('xyz')
-    pos_error = np.linalg.norm(current_pos - waypoint.position)
-    ori_error = np.linalg.norm(current_euler - euler)
-    print(f"  Reached waypoint {i}. Position error: {pos_error:.4f} m, Orientation error: {ori_error:.4f} rad")
 
 
 
