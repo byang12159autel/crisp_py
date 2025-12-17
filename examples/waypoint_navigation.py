@@ -57,6 +57,8 @@ class TrajectoryData:
         self.times = []
         self.actual_positions = []
         self.target_positions = []
+        # Joint space data (for 7 joints)
+        self.joint_positions = []
         self.recording = False
         self.start_time = None
         self.current_target = None
@@ -79,7 +81,7 @@ class TrajectoryData:
         with self.lock:
             self.current_target = target_position.copy()
     
-    def record_point(self, actual_position):
+    def record_point(self, actual_position, joint_pos=None):
         """Record a single data point"""
         with self.lock:
             if self.recording and self.current_target is not None:
@@ -87,13 +89,17 @@ class TrajectoryData:
                 self.times.append(elapsed)
                 self.actual_positions.append(actual_position.copy())
                 self.target_positions.append(self.current_target.copy())
+                # Record joint data if provided
+                if joint_pos is not None:
+                    self.joint_positions.append(joint_pos.copy())
 
 def data_collection_thread(robot, trajectory_data, sample_rate=50):
-    """Background thread to collect position data at specified rate"""
+    """Background thread to collect position and joint data at specified rate"""
     period = 1.0 / sample_rate
     while trajectory_data.recording:
         actual_pos = robot.end_effector_pose.position
-        trajectory_data.record_point(actual_pos)
+        joint_pos = robot.joint_values
+        trajectory_data.record_point(actual_pos, joint_pos)
         time.sleep(period)
 
 def plot_trajectory(trajectory_data, title="End Effector Trajectory"):
@@ -129,6 +135,34 @@ def plot_trajectory(trajectory_data, title="End Effector Trajectory"):
         ax.set_title(f'{label} Trajectory (Max Error: {max_error:.4f} m, Mean Error: {mean_error:.4f} m)')
     
     axes[-1].set_xlabel('Time (s)', fontsize=12)
+    plt.tight_layout()
+    plt.show()
+
+def plot_joint_trajectory(trajectory_data, title="Joint Space Trajectory"):
+    """Plot joint position trajectory data (7 joints)"""
+    if len(trajectory_data.times) == 0 or len(trajectory_data.joint_positions) == 0:
+        print("No joint trajectory data to plot!")
+        return
+    
+    times = np.array(trajectory_data.times)
+    joint_positions = np.array(trajectory_data.joint_positions)
+    
+    # Create 7 rows × 1 column subplot (one row per joint)
+    fig, axes = plt.subplots(7, 1, figsize=(12, 14))
+    fig.suptitle(title, fontsize=16, fontweight='bold')
+    
+    # Plot each joint position
+    for joint_idx in range(7):
+        ax = axes[joint_idx]
+        ax.plot(times, joint_positions[:, joint_idx], 'b-', linewidth=1.5)
+        ax.set_title(f'Joint {joint_idx} Position', fontsize=11, fontweight='bold')
+        ax.set_ylabel('Position (rad)', fontsize=10)
+        ax.grid(True, alpha=0.3)
+        
+        # Only show x-label on bottom subplot
+        if joint_idx == 6:
+            ax.set_xlabel('Time (s)', fontsize=10)
+    
     plt.tight_layout()
     plt.show()
 
@@ -265,8 +299,10 @@ print("Shutting down...")
 robot.shutdown()
 print("Done!")
 
-# Display trajectory plot
+# Display trajectory plots
 print("\n" + "="*70)
-print("Displaying trajectory plot...")
+print("Displaying trajectory plots...")
 print("="*70)
 plot_trajectory(trajectory_data, title="Peg-in-Hole Insertion Trajectory")
+print("\nDisplaying joint space trajectory...")
+plot_joint_trajectory(trajectory_data, title="Joint Space Trajectory")
