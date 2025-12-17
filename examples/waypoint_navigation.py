@@ -25,13 +25,13 @@ nodes = {
         ),
     "ReadyInsert":    
         Pose(
-        position=np.array([0.39329999, -0.01051764,  0.05499903]),
-        orientation=Rotation.from_euler('xyz', [179.90851749,   0.86408047,  -2.79495816])
+        position=np.array([ 0.55 ,-1.20004051e-05,  4.86894885e-01]),
+        orientation=Rotation.from_euler('xyz', [-np.pi, -2.51149549e-05, -1.32601437e-04])
         ),
     "FullInsert":
         Pose(
-        position=np.array([0.45506368, -0.00945191,  0.04498747]),
-        orientation=Rotation.from_euler('xyz', [179.81067291,  -0.46152621,  -2.3824206])
+        position=np.array([0.70, -1.20004051e-05,  4.86894885e-01]),
+        orientation=Rotation.from_euler('xyz', [-np.pi, -2.51149549e-05, -1.32601437e-04])
         ),
     "Pause": {
         "sleep": 5
@@ -71,15 +71,10 @@ print("Full pose waypoints with orientation control")
 print("="*70)
 
 waypoint_path = [
-    nodes.get("Home"),
-    nodes.get("Transition"),
     nodes.get("ReadyInsert"),
     nodes.get("FullInsert"),
     nodes.get("Pause"),
-    nodes.get("FullInsert"),
     nodes.get("ReadyInsert"),
-    nodes.get("Transition"),
-    nodes.get("Home")
 ]
 
 
