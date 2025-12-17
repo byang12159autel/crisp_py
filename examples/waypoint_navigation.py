@@ -22,17 +22,17 @@ nodes = {
         ),
     "Transition":
         Pose(
-        position=np.array([0.39329999, -0.01051764,  0.05499903]),
-        orientation=Rotation.from_euler('xyz', [179.90851749,   0.86408047,  -2.79495816])
+        position=np.array([0.30, 0.0,  0.48]),
+        orientation=Rotation.from_euler('xyz', [-np.pi, -2.51149549e-05, -1.32601437e-04])
         ),
     "ReadyInsert":    
         Pose(
-        position=np.array([ 0.55 ,-1.20004051e-05,  4.86894885e-01]),
+        position=np.array([  0.40629194, -0.00138537,  0.04610078]),
         orientation=Rotation.from_euler('xyz', [-np.pi, -2.51149549e-05, -1.32601437e-04])
         ),
     "FullInsert":
         Pose(
-        position=np.array([0.70, -1.20004051e-05,  4.86894885e-01]),
+        position=np.array([0.45446254, -0.00138537,  0.04610078]),
         orientation=Rotation.from_euler('xyz', [-np.pi, -2.51149549e-05, -1.32601437e-04])
         ),
     "Pause": {
@@ -138,10 +138,12 @@ time.sleep(1.0)
 
 # Configure the cartesian impedance controller
 print("Configuring controller...")
-robot.controller_switcher_client.switch_controller("cartesian_impedance_controller")
 robot.cartesian_controller_parameters_client.load_param_config(
     file_path="config/control/default_cartesian_impedance.yaml"
 )
+robot.controller_switcher_client.switch_controller("cartesian_impedance_controller")
+robot.set_target(pose=robot.end_effector_pose)  # Ensure target is set to current pose
+time.sleep(2.0)  # Increased sleep for stability
 
 print(f"Starting pose: {robot.end_effector_pose.position}")
 print(f"Starting orientation (euler xyz): {robot.end_effector_pose.orientation.as_euler('xyz')}")
@@ -160,6 +162,7 @@ collection_thread = None
 
 ###### APPROACH HOLE ######
 waypoint_path = [
+    nodes.get("Transition"),
     nodes.get("ReadyInsert"),
 ]
 
@@ -219,7 +222,10 @@ for i, waypoint in enumerate(waypoint_path, 1):
             config_path = waypoint["switch_config"]
             print(f"Switching to config: {config_path}")
             robot.cartesian_controller_parameters_client.load_param_config(file_path=config_path)
-            
+
+            # Maintain current joint configuration in nullspace
+            robot.set_target_joint(robot.joint_values)
+
             # Apply 1N force in X direction (insertion direction)
             print("Applying 1N force in X direction (insertion direction)...")
             robot.set_target_wrench(force=np.array([1.0, 0.0, 0.0]), torque=np.array([0.0, 0.0, 0.0]))
