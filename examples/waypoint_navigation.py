@@ -15,10 +15,10 @@ from scipy.spatial.transform import Rotation
 
 # Define waypoints with both position and orientation
 nodes = {
-    "Home":
+    "Storage":
         Pose(
-        position=np.array([0.21410979, 0.37285984, 1.05776812]),
-        orientation=Rotation.from_euler('xyz', [-159.52877581,  -84.8988165,    35.25627904], degrees=True)
+        position=np.array([0.0, 0.09, 0.314]),
+        orientation=Rotation.from_euler('xyz', [-180.0,  52.1,    90.1], degrees=True)
         ),
     "Transition":
         Pose(
@@ -170,10 +170,10 @@ def plot_joint_trajectory(trajectory_data, title="Joint Space Trajectory"):
 robot = make_robot("fr3")
 robot.wait_until_ready()
 
-# Move to home position first
-print("Moving to home position...")
-robot.home()
-time.sleep(1.0)
+# # Move to home position first
+# print("Moving to home position...")
+# robot.home()
+# time.sleep(1.0)
 
 # Configure the cartesian impedance controller
 print("Configuring controller...")
@@ -198,6 +198,8 @@ collection_thread = None
 
 waypoint_path = [
     # APPROACH HOLE
+    nodes.get("Storage"),
+    nodes.get("Pause"),
     nodes.get("Transition"),
     nodes.get("Transition2"),
     nodes.get("ReadyInsert"),
@@ -211,6 +213,7 @@ waypoint_path = [
     {"switch_config": "config/control/clipped_cartesian_impedance.yaml"},
     nodes.get("Transition2"),
     nodes.get("Transition"),
+    nodes.get("Storage"),
 ]
 
 print(f"\nNavigating through {len(waypoint_path)} full pose waypoints...")
@@ -290,9 +293,9 @@ if collection_thread:
 print(f"Collected {len(trajectory_data.times)} data points")
 
 # Return to home position
-print("\nReturning to home position...")
-robot.home()
-time.sleep(1.0)
+# print("\nReturning to home position...")
+# robot.home()
+# time.sleep(1.0)
 
 # Shutdown the robot
 print("Shutting down...")
