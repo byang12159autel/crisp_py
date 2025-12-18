@@ -32,13 +32,13 @@ nodes = {
         ),
     "ReadyInsert":
         Pose(
-        position=np.array([  0.40475205, -0.00513635,  0.04563937]),
-        orientation=Rotation.from_euler('xyz', [-1.79932687e+02,  0.00461875 ,-4.757517], degrees=True)
+        position=np.array([  0.40475205, -0.00513635,  0.0450063937]),
+        orientation=Rotation.from_euler('xyz', [-1.79932687e+02,  2.0000461875 ,-4.757517], degrees=True)
         ),
     "FullInsert":
         Pose(
-        position=np.array([0.45475205, -0.00513635,  0.04563937]),
-        orientation=Rotation.from_euler('xyz', [-1.79932687e+02, 0.00461875 ,-4.757517], degrees=True)
+        position=np.array([0.45475205, -0.00513635,  0.0450063937]),
+        orientation=Rotation.from_euler('xyz', [-1.79932687e+02, 1.0000461875 ,-4.757517], degrees=True)
         ),
     "Pause": {
         "sleep": 5
@@ -172,8 +172,8 @@ robot.wait_until_ready()
 
 # Move to home position first
 print("Moving to home position...")
-# robot.home()
-# time.sleep(1.0)
+robot.home()
+time.sleep(1.0)
 
 # Configure the cartesian impedance controller
 print("Configuring controller...")
@@ -203,9 +203,9 @@ waypoint_path = [
     nodes.get("Transition"),
     nodes.get("Transition2"),
     nodes.get("ReadyInsert"),
-    nodes.get("Pause"),
+    # nodes.get("Pause"),
     # HOLE INSERTION
-    {"switch_config_compliant": "config/control/gravity_compensation_peginhole.yaml"},
+    {"switch_config_compliant": "config/control/no_friction_cartesian_impedance.yaml"},
     nodes.get("FullInsert"),
     nodes.get("Pause"),
     nodes.get("ReadyInsert"),
@@ -246,7 +246,7 @@ for i, waypoint in enumerate(waypoint_path, 1):
 
             # Apply 1N force in X direction (insertion direction)
             print("Applying 1N force in X direction (insertion direction)...")
-            robot.set_target_wrench(force=np.array([2.0, 0.0, 0.0]), torque=np.array([0.0, 0.0, 0.0]))
+            robot.set_target_wrench(force=np.array([6.0, 0.0, 0.0]), torque=np.array([0.0, 0.0, 0.0]))
             
             continue
         elif "switch_config" in waypoint:

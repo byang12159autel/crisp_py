@@ -2,13 +2,15 @@
 
 # %%
 from crisp_py.robot import make_robot
+import time
 
 robot = make_robot("fr3")
 robot.wait_until_ready()
-
+robot.home()
+time.sleep(1.0)
 # %%
 robot.cartesian_controller_parameters_client.load_param_config(
-    file_path="config/control/gravity_compensation.yaml"
+    file_path="config/control/no_friction_cartesian_impedance.yaml"
 )
 robot.controller_switcher_client.switch_controller("cartesian_impedance_controller")
 

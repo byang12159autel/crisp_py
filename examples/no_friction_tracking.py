@@ -20,7 +20,7 @@ print(f"Starting orientation (euler xyz): {robot.end_effector_pose.orientation.a
 # Load the no-friction cartesian impedance configuration
 print("\n[3] Loading no-friction configuration...")
 robot.cartesian_controller_parameters_client.load_param_config(
-    file_path="config/control/no_friction_cartesian_impedance.yaml"
+    file_path="config/control/gravity_compensation_on_plane.yaml"
 )
 
 # Set target to current home position
