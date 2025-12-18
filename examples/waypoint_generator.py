@@ -8,17 +8,6 @@ from crisp_py.robot import make_robot
 from crisp_py.utils.geometry import Pose
 from scipy.spatial.transform import Rotation, Slerp
 
-# Define waypoints with both position and orientation
-Storage = Pose(
-        position=np.array([0.0, 0.09, 0.35]),
-        orientation=Rotation.from_euler('xyz', [-180.0,  52.1,    90.1], degrees=True)
-        )
-
-ready = Pose(
-    position=np.array([0.30, 0.0,  0.48]),
-    orientation=Rotation.from_euler('xyz', [-180, -2.51149549e-05, -4.757517], degrees=True)
-    )
-
 def add_intermediate_waypoints(start_pose, end_pose, num_intermediate=2):
     """Add waypoints between start and end to avoid singularities"""
     waypoints = []
@@ -95,13 +84,33 @@ def plot_waypoints_3d(waypoints, arrow_length=0.05):
     plt.tight_layout()
     plt.show()
 
+if __name__ == "__main__":
+    # Define waypoints with both position and orientation
+    Storage = Pose(
+            position=np.array([0.0, 0.09, 0.35]),
+            orientation=Rotation.from_euler('xyz', [-180.0,  52.1,    90.1], degrees=True)
+            )
 
-results = add_intermediate_waypoints(Storage, ready)
-for i in results:
-    print(f"Position: {i.position}")
-    print(f"Orientation (quat): {i.orientation.as_quat()}")
+    ready = Pose(
+        position=np.array([0.30, 0.0,  0.48]),
+        orientation=Rotation.from_euler('xyz', [-180, -2.51149549e-05, -4.757517], degrees=True)
+        )
 
-print("Done")
+    Transition2=Pose(
+            position=np.array([0.30, -0.00138537,  0.04610078]),
+            orientation=Rotation.from_euler('xyz', [-180,  0.00461875, -4.757517], degrees=True)
+            )
+    ReadyInsert= Pose(
+            position=np.array([  0.40475205, -0.00513635,  0.04563937]),
+            orientation=Rotation.from_euler('xyz', [-1.79932687e+02,  0.00461875 ,-4.757517], degrees=True)
+            )
 
-# Visualize the waypoints
-plot_waypoints_3d(results)
+    # results = add_intermediate_waypoints(Storage, ready)
+    results = add_intermediate_waypoints(Transition2, ReadyInsert)
+
+    for i in results:
+        print(f"Position: {i.position}")
+        print(f"Orientation (quat): {i.orientation.as_quat()}")
+
+    # Visualize the waypoints
+    plot_waypoints_3d(results)

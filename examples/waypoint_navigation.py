@@ -40,17 +40,17 @@ nodes = {
     "Transition2":
         Pose(
         position=np.array([0.30, -0.00138537,  0.04610078]),
-        orientation=Rotation.from_euler('xyz', [-180,  0.00461875, -4.757517], degrees=True)
+        orientation=Rotation.from_quat([-9.99138285e-01 , 4.15052419e-02 , 4.02714650e-05 , 1.67291848e-06])  # [x, y, z, w]
         ),
     "ReadyInsert":
         Pose(
         position=np.array([  0.40475205, -0.00513635,  0.04563937]),
-        orientation=Rotation.from_euler('xyz', [-1.79932687e+02,  0.00461875 ,-4.757517], degrees=True)
+        orientation=Rotation.from_quat([-9.99138112e-01 , 4.15052584e-02  ,1.58905856e-05 , 5.88583439e-04])  # [x, y, z, w]
         ),
     "FullInsert":
         Pose(
         position=np.array([0.45475205, -0.00513635,  0.04563937]),
-        orientation=Rotation.from_euler('xyz', [-1.79932687e+02, 0.00461875 ,-4.757517], degrees=True)
+        orientation=Rotation.from_quat([-9.99138112e-01 , 4.15052584e-02  ,1.58905856e-05 , 5.88583439e-04])  # [x, y, z, w]
         ),
     "Pause": {
         "sleep": 5
