@@ -17,8 +17,8 @@ from scipy.spatial.transform import Rotation
 nodes = {
     "Home":
         Pose(
-        position=np.array([0.21410979, 0.37285984, 1.05776812]),
-        orientation=Rotation.from_euler('xyz', [-159.52877581,  -84.8988165,    35.25627904], degrees=True)
+        position=np.array([0.17 ,-0.00083321 , 0.81030707]),
+        orientation=Rotation.from_euler('xyz', [-180, -84.02608618   ,4.93399574], degrees=True)
         ),
     "Transition":
         Pose(
@@ -198,6 +198,7 @@ collection_thread = None
 
 waypoint_path = [
     # APPROACH HOLE
+    nodes.get("Home"),
     nodes.get("Transition"),
     nodes.get("Transition2"),
     nodes.get("ReadyInsert"),
@@ -211,6 +212,7 @@ waypoint_path = [
     {"switch_config": "config/control/clipped_cartesian_impedance.yaml"},
     nodes.get("Transition2"),
     nodes.get("Transition"),
+    nodes.get("Home"),
 ]
 
 print(f"\nNavigating through {len(waypoint_path)} full pose waypoints...")
@@ -290,9 +292,9 @@ if collection_thread:
 print(f"Collected {len(trajectory_data.times)} data points")
 
 # Return to home position
-print("\nReturning to home position...")
-robot.home()
-time.sleep(1.0)
+# print("\nReturning to home position...")
+# robot.home()
+# time.sleep(1.0)
 
 # Shutdown the robot
 print("Shutting down...")
