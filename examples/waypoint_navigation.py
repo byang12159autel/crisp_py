@@ -171,9 +171,37 @@ robot = make_robot("fr3")
 robot.wait_until_ready()
 
 # Move to home position first
-print("Moving to home position...")
-robot.home()
+# print("Moving to home position...")
+# robot.home()
+# time.sleep(1.0)
+
+# Define the home joint configuration (same as in FrankaConfig)
+home_joint_config = np.array([
+    0,              # joint1
+    -np.pi / 4,     # joint2
+    0,              # joint3
+    -3 * np.pi / 4, # joint4
+    0,              # joint5
+    np.pi / 2,      # joint6
+    np.pi / 4,      # joint7
+])
+
+# Switch to the joint trajectory controller
+robot.controller_switcher_client.switch_controller("joint_trajectory_controller")
+
+# Send the joint configuration command
+robot.joint_trajectory_controller_client.send_joint_config(
+    joint_names=robot.config.joint_names,
+    joint_positions=home_joint_config,
+    time_from_start=5.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
+    blocking=True         # Wait until motion completes
+)
+
+# Wait for robot to be ready again
+robot.wait_until_ready()
 time.sleep(1.0)
+
+
 
 # Configure the cartesian impedance controller
 print("Configuring controller...")
