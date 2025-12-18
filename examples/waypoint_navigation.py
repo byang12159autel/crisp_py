@@ -14,21 +14,28 @@ from crisp_py.utils.geometry import Pose
 from scipy.spatial.transform import Rotation
 
 # Define waypoints with both position and orientation
+
+
 nodes = {
     "Storage":
         Pose(
         position=np.array([0.0, 0.09, 0.35]),
-        orientation=Rotation.from_euler('xyz', [-180.0,  52.1,    90.1], degrees=True)
+        orientation=Rotation.from_quat([-0.634718 ,  -0.63582676 , 0.3102586,  -0.31080058])  # [x, y, z, w]
         ),
     "Transition0":
         Pose(
-        position=np.array([0.2, 0.10, 0.35]),
-        orientation=Rotation.from_euler('xyz', [-180.0,  52.1,    90.1], degrees=True)
+        position=np.array([0.1    ,    0.06   ,    0.39333333]),
+        orientation=Rotation.from_quat([-0.83783203, -0.4440559,   0.22436109, -0.2247531])  # [x, y, z, w]
+        ),
+    "Transition01":
+        Pose(
+        position=np.array([0.2     ,   0.03     ,  0.43666667]),
+        orientation=Rotation.from_quat([-0.96318358, -0.21107047 , 0.11763974, -0.1178454])  # [x, y, z, w]
         ),
     "Transition":
         Pose(
         position=np.array([0.30, 0.0,  0.48]),
-        orientation=Rotation.from_euler('xyz', [-180, -2.51149549e-05, -4.757517], degrees=True)
+        orientation=Rotation.from_quat([-9.99138286e-01 , 4.15052419e-02 ,-2.18980466e-07, -9.09667588e-09])  # [x, y, z, w]
         ),
     "Transition2":
         Pose(
@@ -206,6 +213,7 @@ waypoint_path = [
     nodes.get("Storage"),
     nodes.get("Pause"),
     nodes.get("Transition0"),
+    nodes.get("Transition01"),
     nodes.get("Transition"),
     nodes.get("Transition2"),
     nodes.get("ReadyInsert"),
@@ -219,6 +227,7 @@ waypoint_path = [
     {"switch_config": "config/control/clipped_cartesian_impedance.yaml"},
     nodes.get("Transition2"),
     nodes.get("Transition"),
+    nodes.get("Transition01"),
     nodes.get("Transition0"),
     nodes.get("Storage"),
 ]
@@ -269,12 +278,12 @@ for i, waypoint in enumerate(waypoint_path, 1):
     print(f"    Position: {waypoint.position}")
     print(f"    Orientation (euler xyz): {euler}")
 
-    if waypoint is nodes["Storage"]:
-        robot.set_target_joint(np.array([1.57, -0.7853, 0.0, -2.3561, 0.0, 1.5708, 0.7853    ]))  # Guides nullspace
-    if waypoint is nodes["Transition0"]:
-        robot.set_target_joint(np.array([0.78, -0.7853, 0.0, -2.3561, 0.0, 1.5708, 0.7853    ]))  # Guides nullspace
-    if waypoint is nodes["Transition"]:
-        robot.set_target_joint(np.array([0.0, -0.7853, 0.0, -2.3561, 0.0, 1.5708, 0.7853    ]))  # Guides nullspace    
+    # if waypoint is nodes["Storage"]:
+    #     robot.set_target_joint(np.array([1.57, -0.7853, 0.0, -2.3561, 0.0, 1.5708, 0.7853    ]))  # Guides nullspace
+    # if waypoint is nodes["Transition0"]:
+    #     robot.set_target_joint(np.array([0.78, -0.7853, 0.0, -2.3561, 0.0, 1.5708, 0.7853    ]))  # Guides nullspace
+    # if waypoint is nodes["Transition"]:
+    #     robot.set_target_joint(np.array([0.0, -0.7853, 0.0, -2.3561, 0.0, 1.5708, 0.7853    ]))  # Guides nullspace    
         
     # Update target position for trajectory tracking
     trajectory_data.update_target(waypoint.position)
