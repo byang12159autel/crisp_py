@@ -268,7 +268,14 @@ for i, waypoint in enumerate(waypoint_path, 1):
     print(f"\n  Moving to waypoint {i}/{len(waypoint_path)}:")
     print(f"    Position: {waypoint.position}")
     print(f"    Orientation (euler xyz): {euler}")
-    
+
+    if waypoint is nodes["Storage"]:
+        robot.set_target_joint(np.array([1.57, -0.7853, 0.0, -2.3561, 0.0, 1.5708, 0.7853    ]))  # Guides nullspace
+    if waypoint is nodes["Transition0"]:
+        robot.set_target_joint(np.array([0.78, -0.7853, 0.0, -2.3561, 0.0, 1.5708, 0.7853    ]))  # Guides nullspace
+    if waypoint is nodes["Transition"]:
+        robot.set_target_joint(np.array([0.0, -0.7853, 0.0, -2.3561, 0.0, 1.5708, 0.7853    ]))  # Guides nullspace    
+        
     # Update target position for trajectory tracking
     trajectory_data.update_target(waypoint.position)
     
