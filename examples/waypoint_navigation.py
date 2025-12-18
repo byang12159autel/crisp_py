@@ -172,8 +172,8 @@ robot.wait_until_ready()
 
 # Move to home position first
 print("Moving to home position...")
-robot.home()
-time.sleep(1.0)
+# robot.home()
+# time.sleep(1.0)
 
 # Configure the cartesian impedance controller
 print("Configuring controller...")
@@ -199,6 +199,7 @@ collection_thread = None
 waypoint_path = [
     # APPROACH HOLE
     nodes.get("Home"),
+    nodes.get("Pause"),
     nodes.get("Transition"),
     nodes.get("Transition2"),
     nodes.get("ReadyInsert"),
