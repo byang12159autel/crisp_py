@@ -172,10 +172,43 @@ def plot_joint_trajectory(trajectory_data, title="Joint Space Trajectory"):
     plt.tight_layout()
     plt.show()
 
+def startup_position_check():
+    # Check if robot is already at home position
+    home_config = nodes.get("Home_joint_config")
+    current_joints = robot.joint_values
+    joint_tolerance = 0.1  # radians (~5.7 degrees)
+
+    try:
+        # Check if all joints are within tolerance
+        joint_errors = np.abs(current_joints - home_config)
+        max_error = np.max(joint_errors)
+        
+        if np.allclose(current_joints, home_config, atol=joint_tolerance):
+            print("✓ Robot is already at home position")
+            
+        else:
+            print("Robot is NOT at home position. Have you ran reset_to_home.py?")
+            print(f"  Max joint error: {max_error:.4f} rad ({np.degrees(max_error):.2f}°)")
+            print("  Current joints:", np.round(current_joints, 4))
+            print("  Home config:   ", np.round(home_config, 4))
+            print("  Joint errors:  ", np.round(joint_errors, 4))
+        
+            print("Aborting script...")
+            robot.shutdown()
+            exit()
+            
+    except Exception as e:
+        print(f"❌ Error with startup_position_check() checking initial joint position: {e}")
+        print("Aborting script...")
+        robot.shutdown()
+        exit(1)  # STOPS the script
+
 ############### CONTROLLER -> JOINT ###############
 # Initialize the robot
 robot = make_robot("fr3")
 robot.wait_until_ready()
+
+startup_position_check()
 
 # # Switch to the joint trajectory controller
 robot.controller_switcher_client.switch_controller("joint_trajectory_controller")
