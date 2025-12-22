@@ -10,7 +10,7 @@ robot.home()
 time.sleep(1.0)
 # %%
 robot.cartesian_controller_parameters_client.load_param_config(
-    file_path="config/control/no_friction_cartesian_impedance.yaml"
+    file_path="config/control/gravity_compensation.yaml"
 )
 robot.controller_switcher_client.switch_controller("cartesian_impedance_controller")
 
