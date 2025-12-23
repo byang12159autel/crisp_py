@@ -33,21 +33,21 @@ nodes = {
         ),
     "Transition2":
         Pose(
-        position=np.array([0.30, -0.00138537,  0.04610078]),
+        position=np.array([0.30, -0.00138537,   0.27]),
         orientation=Rotation.from_euler('xyz', [-180,  0.00461875, -4.757517], degrees=True)
         ),
     "ReadyInsert":
         Pose(
-        position=np.array([  0.40475205, -0.00513635,  0.0450063937]),
-        orientation=Rotation.from_euler('xyz', [-1.79932687e+02,  2.0000461875 ,-4.757517], degrees=True)
+        position=np.array([ 0.41032407 ,-0.01228578 , 0.27]),
+        orientation=Rotation.from_euler('xyz', [-179.86306532 ,  0.0  , -2.99437881], degrees=True)
         ),
     "FullInsert":
         Pose(
-        position=np.array([0.45475205, -0.00513635,  0.0450063937]),
-        orientation=Rotation.from_euler('xyz', [-1.79932687e+02, 1.0000461875 ,-4.757517], degrees=True)
+        position=np.array([0.45275626 ,-0.00578826 , 0.27099967]),
+        orientation=Rotation.from_euler('xyz',[-1.79592926e+02  ,2.0 ,-3.47638615], degrees=True)
         ),
     "Pause": {
-        "sleep": 5
+        "sleep": 10
     }
 }
 
@@ -210,41 +210,41 @@ robot.wait_until_ready()
 
 startup_position_check()
 
-# # Switch to the joint trajectory controller
-robot.controller_switcher_client.switch_controller("joint_trajectory_controller")
+# # # Switch to the joint trajectory controller
+# robot.controller_switcher_client.switch_controller("joint_trajectory_controller")
 
-# Send the joint configuration command
-robot.joint_trajectory_controller_client.send_joint_config(
-    joint_names=robot.config.joint_names,
-    joint_config=nodes.get("stowaway_joint_config"),
-    time_to_goal=5.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
-    blocking=True         # Wait until motion completes
-)
-# Wait for robot to be ready again
-robot.wait_until_ready()
-time.sleep(3.0)
+# # Send the joint configuration command
+# robot.joint_trajectory_controller_client.send_joint_config(
+#     joint_names=robot.config.joint_names,
+#     joint_config=nodes.get("stowaway_joint_config"),
+#     time_to_goal=5.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
+#     blocking=True         # Wait until motion completes
+# )
+# # Wait for robot to be ready again
+# robot.wait_until_ready()
+# time.sleep(3.0)
 
-# Send the joint configuration command
-robot.joint_trajectory_controller_client.send_joint_config(
-    joint_names=robot.config.joint_names,
-    joint_config=nodes.get("stowaway_transition_joint_config"),
-    time_to_goal=3.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
-    blocking=True         # Wait until motion completes
-)
-# Wait for robot to be ready again
-robot.wait_until_ready()
-time.sleep(0.5)
+# # Send the joint configuration command
+# robot.joint_trajectory_controller_client.send_joint_config(
+#     joint_names=robot.config.joint_names,
+#     joint_config=nodes.get("stowaway_transition_joint_config"),
+#     time_to_goal=3.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
+#     blocking=True         # Wait until motion completes
+# )
+# # Wait for robot to be ready again
+# robot.wait_until_ready()
+# time.sleep(0.5)
 
-# Send the joint configuration command
-robot.joint_trajectory_controller_client.send_joint_config(
-    joint_names=robot.config.joint_names,
-    joint_config=nodes.get("Home_joint_config"),
-    time_to_goal=3.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
-    blocking=True         # Wait until motion completes
-)
-# Wait for robot to be ready again
-robot.wait_until_ready()
-time.sleep(0.5)
+# # Send the joint configuration command
+# robot.joint_trajectory_controller_client.send_joint_config(
+#     joint_names=robot.config.joint_names,
+#     joint_config=nodes.get("Home_joint_config"),
+#     time_to_goal=3.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
+#     blocking=True         # Wait until motion completes
+# )
+# # Wait for robot to be ready again
+# robot.wait_until_ready()
+# time.sleep(0.5)
 
 ############### SWITCHING CONTROLLER JOINT -> CARTESIAN ###############
 # Before switching controllers, set joint targets to current values
@@ -308,9 +308,10 @@ for i, waypoint in enumerate(waypoint_path, 1):
             print(f"Switching to config: {config_path}")
             robot.cartesian_controller_parameters_client.load_param_config(file_path=config_path)
 
-            # Maintain current joint configuration in nullspace
+            # Maintain current pose and joint configuration
+            robot.set_target(pose=robot.end_effector_pose)
             robot.set_target_joint(robot.joint_values)
-
+            # time.sleep(600)
             # Apply 1N force in X direction (insertion direction)
             print("Applying 1N force in X direction (insertion direction)...")
             robot.set_target_wrench(force=np.array([6.0, 0.0, 0.0]), torque=np.array([0.0, 0.0, 0.0]))
@@ -320,6 +321,10 @@ for i, waypoint in enumerate(waypoint_path, 1):
             config_path = waypoint["switch_config"]
             print(f"Switching to config: {config_path}")
             robot.cartesian_controller_parameters_client.load_param_config(file_path=config_path)
+
+            # Maintain current pose and joint configuration
+            robot.set_target(pose=robot.end_effector_pose)
+            robot.set_target_joint(robot.joint_values)
             
             continue
 
@@ -365,16 +370,16 @@ robot.joint_trajectory_controller_client.send_joint_config(
 robot.wait_until_ready()
 time.sleep(0.5)
 
-# Send the joint configuration command
-robot.joint_trajectory_controller_client.send_joint_config(
-    joint_names=robot.config.joint_names,
-    joint_config=nodes.get("stowaway_joint_config"),
-    time_to_goal=3.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
-    blocking=True         # Wait until motion completes
-)
-# Wait for robot to be ready again
-robot.wait_until_ready()
-time.sleep(1.0)
+# # Send the joint configuration command
+# robot.joint_trajectory_controller_client.send_joint_config(
+#     joint_names=robot.config.joint_names,
+#     joint_config=nodes.get("stowaway_joint_config"),
+#     time_to_goal=3.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
+#     blocking=True         # Wait until motion completes
+# )
+# # Wait for robot to be ready again
+# robot.wait_until_ready()
+# time.sleep(1.0)
 
 
 print("\n✓ All waypoints completed!")
