@@ -16,7 +16,7 @@ from scipy.spatial.transform import Rotation
 # Define waypoints with both position and orientation
 nodes = {
     "stowaway_joint_config": 
-        np.array([np.pi/2, -1.2862661,  -0.01637701 ,-2.3484082,   0.04115199,  2.624527,  0.83065337]),
+        np.array([np.pi/2, -1.2862661,  -0.01637701 ,-2.3484082,   0.04115199,  2.624527,  0.7854]),
     "stowaway_transition_joint_config": 
         np.array([0.01729893, -1.2862661,  -0.01637701 ,-2.3484082,   0.04115199,  2.624527,  0.83065337]),
     "Home_joint_config":
@@ -38,18 +38,19 @@ nodes = {
         ),
     "ReadyInsert":
         Pose(
-        position=np.array([ 0.41032407 ,-0.01228578 , 0.276]),
-        orientation=Rotation.from_euler('xyz', [-179.86306532 ,  1.0  , -2.99437881], degrees=True)
+        position=np.array([0.420, -0.00796647 , 0.27725339]),
+        orientation=Rotation.from_euler('xyz', [-179.86306532 ,  -0.66942365 ,  -1.62893362], degrees=True)
         ),
     "FullInsert":
         Pose(
-        position=np.array([0.45275626 ,-0.01228578 ,0.28]),
-        orientation=Rotation.from_euler('xyz',[-179.86306532 ,  1.0  , -2.99437881], degrees=True)
+        position=np.array([0.46016235, -0.00796647 , 0.288]),
+        orientation=Rotation.from_euler('xyz',[-179.86306532 ,  2.0 ,  -1.62893362], degrees=True)
         ),
     "Pause": {
         "sleep": 10
     }
 }
+
 
 
 speed = 0.1
@@ -204,68 +205,10 @@ def startup_position_check():
         exit(1)  # STOPS the script
 
 
-
-############### CONTROLLER -> JOINT ###############
-# Initialize the robot
-robot = make_robot("fr3")
-robot.wait_until_ready()
-
-# startup_position_check()
-
-for repetitions in range(20):
-    print(f"Current Iteration #: {repetitions}")
-    # # # Switch to the joint trajectory controller
-    robot.controller_switcher_client.switch_controller("joint_trajectory_controller")
-
-    # # Send the joint configuration command
-    robot.joint_trajectory_controller_client.send_joint_config(
-        joint_names=robot.config.joint_names,
-        joint_config=nodes.get("stowaway_joint_config"),
-        time_to_goal=5.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
-        blocking=True         # Wait until motion completes
-    )
-    # Wait for robot to be ready again
-    robot.wait_until_ready()
-    time.sleep(3.0)
-
-    # Send the joint configuration command
-    robot.joint_trajectory_controller_client.send_joint_config(
-        joint_names=robot.config.joint_names,
-        joint_config=nodes.get("stowaway_transition_joint_config"),
-        time_to_goal=3.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
-        blocking=True         # Wait until motion completes
-    )
-    # Wait for robot to be ready again
-    robot.wait_until_ready()
-    time.sleep(0.5)
-
-    # Send the joint configuration command
-    robot.wait_until_ready()
-    robot.home()
-    time.sleep(1.0)
-
-    ############### SWITCHING CONTROLLER JOINT -> CARTESIAN ###############
-    # Before switching controllers, set joint targets to current values
-    robot.set_target_joint(robot.joint_values)
-
-    # Configure the cartesian impedance controller
-    print("Configuring controller...")
-    robot.cartesian_controller_parameters_client.load_param_config(
-        file_path="config/control/default_cartesian_impedance.yaml"
-    )
-    robot.controller_switcher_client.switch_controller("cartesian_impedance_controller")
-    robot.set_target(pose=robot.end_effector_pose)  # Ensure target is set to current pose
-    time.sleep(1.0)  # Increased sleep for stability
-
-
-    # Initialize trajectory data collection
-    trajectory_data = TrajectoryData()
-    collection_thread = None
+if __name__ == "__main__":
 
     waypoint_path = [
         # APPROACH HOLE
-        # nodes.get("Home"),
-        # nodes.get("Pause"),
         nodes.get("Transition"),
         nodes.get("Transition2"),
         nodes.get("ReadyInsert"),
@@ -273,131 +216,185 @@ for repetitions in range(20):
         {"switch_config_compliant": "config/control/no_friction_cartesian_impedance.yaml"},
         nodes.get("FullInsert"),
         nodes.get("Pause"),
-        nodes.get("ReadyInsert"),
         # RETRACTION
         {"switch_config": "config/control/default_cartesian_impedance.yaml"},
+        nodes.get("ReadyInsert"),
         nodes.get("Transition2"),
         nodes.get("Transition"),
-        # nodes.get("Home"),
     ]
 
-
-    # Start trajectory recording before approach
-    # print("Starting trajectory data collection...")
-    # trajectory_data.start_recording(waypoint_path[0].position)
-    # collection_thread = threading.Thread(
-    #     target=data_collection_thread,
-    #     args=(robot, trajectory_data),
-    #     daemon=True
-    # )
-    # collection_thread.start()
-
-    for i, waypoint in enumerate(waypoint_path, 1):
-
-        # Check if waypoint is a dictionary with a command
-        if isinstance(waypoint, dict):
-            if "sleep" in waypoint:
-                print(f"Pausing for {waypoint['sleep']} seconds...")
-                time.sleep(waypoint["sleep"])
-                continue
-            elif "switch_config_compliant" in waypoint:
-                config_path = waypoint["switch_config_compliant"]
-                print(f"Switching to config: {config_path}")
-                robot.cartesian_controller_parameters_client.load_param_config(file_path=config_path)
-
-                # Maintain current pose and joint configuration
-                robot.set_target(pose=robot.end_effector_pose)
-                robot.set_target_joint(robot.joint_values)
-                # time.sleep(600)
-                # Apply 1N force in X direction (insertion direction)
-                print("Applying 1N force in X direction (insertion direction)...")
-                robot.set_target_wrench(force=np.array([8.0, 0.0, 0.0]), torque=np.array([0.0, 0.0, 0.0]))
-                
-                continue
-            elif "switch_config" in waypoint:
-                config_path = waypoint["switch_config"]
-                print(f"Switching to config: {config_path}")
-                robot.cartesian_controller_parameters_client.load_param_config(file_path=config_path)
-
-                # Maintain current pose and joint configuration
-                robot.set_target(pose=robot.end_effector_pose)
-                robot.set_target_joint(robot.joint_values)
-                
-                continue
-
-        # Otherwise it's a Pose object
-        euler = waypoint.orientation.as_euler('xyz')
-        print(f"\n  Moving to waypoint {i}/{len(waypoint_path)}:")
-        print(f"    Position: {waypoint.position}")
-        print(f"    Orientation (euler xyz): {euler}")
-        
-        # Update target position for trajectory tracking
-        trajectory_data.update_target(waypoint.position)
-        
-        robot.move_to(pose=waypoint, speed=speed)
-        time.sleep(0.5)
-        
-        current_pos = robot.end_effector_pose.position
-        current_euler = robot.end_effector_pose.orientation.as_euler('xyz')
-        pos_error = np.linalg.norm(current_pos - waypoint.position)
-        ori_error = np.linalg.norm(current_euler - euler)
-        print(f"  Reached waypoint {i}. Position error: {pos_error:.4f} m, Orientation error: {ori_error:.4f} rad")
-
-        # Clear force after insertion completes
-        if waypoint is nodes["FullInsert"]:
-            print("Clearing insertion force...")
-            robot.set_target_wrench(force=np.array([0.0, 0.0, 0.0]), torque=np.array([0.0, 0.0, 0.0]))
-
-
-    ############### SWITCHING CONTROLLER CARTESIAN -> JOINT ###############
-    # # Switch to the joint trajectory controller
-    robot.set_target_joint(robot.joint_values)
-    robot.controller_switcher_client.switch_controller("joint_trajectory_controller")
-    time.sleep(1.0)
-
-
-    # Send the joint configuration command
-    robot.joint_trajectory_controller_client.send_joint_config(
-        joint_names=robot.config.joint_names,
-        joint_config=nodes.get("stowaway_transition_joint_config"),
-        time_to_goal=3.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
-        blocking=True         # Wait until motion completes
-    )
-    # Wait for robot to be ready again
+    ############### CONTROLLER -> JOINT ###############
+    # Initialize the robot
+    robot = make_robot("fr3")
     robot.wait_until_ready()
-    time.sleep(0.5)
 
-    # Send the joint configuration command
-    robot.joint_trajectory_controller_client.send_joint_config(
-        joint_names=robot.config.joint_names,
-        joint_config=nodes.get("stowaway_joint_config"),
-        time_to_goal=3.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
-        blocking=True         # Wait until motion completes
-    )
-    # Wait for robot to be ready again
-    robot.wait_until_ready()
-    time.sleep(1.0)
+    # startup_position_check()
+
+    for repetitions in range(100):
+        try:
+            print(f"############ Current Iteration: {repetitions+1} ############ ")
+            # # # Switch to the joint trajectory controller
+            robot.controller_switcher_client.switch_controller("joint_trajectory_controller")
+
+            # # Send the joint configuration command
+            robot.joint_trajectory_controller_client.send_joint_config(
+                joint_names=robot.config.joint_names,
+                joint_config=nodes.get("stowaway_joint_config"),
+                time_to_goal=5.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
+                blocking=True         # Wait until motion completes
+            )
+            # Wait for robot to be ready again
+            robot.wait_until_ready()
+            time.sleep(3.0)
+
+            # Send the joint configuration command
+            robot.joint_trajectory_controller_client.send_joint_config(
+                joint_names=robot.config.joint_names,
+                joint_config=nodes.get("stowaway_transition_joint_config"),
+                time_to_goal=3.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
+                blocking=True         # Wait until motion completes
+            )
+            # Wait for robot to be ready again
+            robot.wait_until_ready()
+            time.sleep(0.5)
+
+            # Send the joint configuration command
+            robot.home()
+            time.sleep(1.0)
+
+            ############### SWITCHING CONTROLLER JOINT -> CARTESIAN ###############
+            # Before switching controllers, set joint targets to current values
+            robot.set_target_joint(robot.joint_values)
+
+            # Configure the cartesian impedance controller
+            print("  Switching to config: cartesian_impedance_controller")
+            robot.cartesian_controller_parameters_client.load_param_config(
+                file_path="config/control/default_cartesian_impedance.yaml"
+            )
+            robot.controller_switcher_client.switch_controller("cartesian_impedance_controller")
+            robot.set_target(pose=robot.end_effector_pose)  # Ensure target is set to current pose
+            time.sleep(1.0)  # Increased sleep for stability
 
 
-    print("\n✓ All waypoints completed!")
+            for i, waypoint in enumerate(waypoint_path, 1):
 
-    time.sleep(5)
+                # Check if waypoint is a dictionary with a command
+                if isinstance(waypoint, dict):
+                    if "sleep" in waypoint:
+                        print(f"  Pausing for {waypoint['sleep']} seconds...")
+                        time.sleep(waypoint["sleep"])
+                        continue
+                    elif "switch_config_compliant" in waypoint:
+                        config_path = waypoint["switch_config_compliant"]
+                        print(f"  Switching to config: {config_path}")
+                        robot.cartesian_controller_parameters_client.load_param_config(file_path=config_path)
 
-# print("Stopping trajectory data collection...")
-# trajectory_data.stop_recording()
-# if collection_thread:
-#     collection_thread.join(timeout=1.0)
-# print(f"Collected {len(trajectory_data.times)} data points")
+                        # Maintain current pose and joint configuration
+                        robot.set_target(pose=robot.end_effector_pose)
+                        robot.set_target_joint(robot.joint_values)
+                        # Debug sanity check before insertion occurs
+                        # time.sleep(600)
+                        # Apply 1N force in X direction (insertion direction)
+                        print("  Applying force in X direction (insertion direction)...")
+                        robot.set_target_wrench(force=np.array([8.0, 0.0, 0.0]), torque=np.array([0.0, 0.0, 0.0]))
+                        
+                        continue
+                    elif "switch_config" in waypoint:
+                        config_path = waypoint["switch_config"]
+                        print(f"  Switching to config: {config_path}")
+                        robot.cartesian_controller_parameters_client.load_param_config(file_path=config_path)
 
-# Shutdown the robot
-print("Shutting down...")
-robot.shutdown()
-print("Done!")
+                        # Maintain current pose and joint configuration
+                        robot.set_target(pose=robot.end_effector_pose)
+                        robot.set_target_joint(robot.joint_values)
+                        
+                        continue
 
-# Display trajectory plots
-print("\n" + "="*70)
-print("Displaying trajectory plots...")
-print("="*70)
-plot_trajectory(trajectory_data, title="Peg-in-Hole Insertion Trajectory")
-print("\nDisplaying joint space trajectory...")
-plot_joint_trajectory(trajectory_data, title="Joint Space Trajectory")
+                # Otherwise it's a Pose object
+                euler = waypoint.orientation.as_euler('xyz')
+                print(f"\n  Moving to waypoint {i}/{len(waypoint_path)}:")
+                
+                # Update target position for trajectory tracking
+                # trajectory_data.update_target(waypoint.position)
+                
+                robot.move_to(pose=waypoint, speed=speed)
+                time.sleep(0.5)
+                
+                current_pos = robot.end_effector_pose.position
+                current_euler = robot.end_effector_pose.orientation.as_euler('xyz')
+                pos_error = np.linalg.norm(current_pos - waypoint.position)
+                ori_error = np.linalg.norm(current_euler - euler)
+                print(f"  Reached waypoint {i}. Position error: {pos_error:.4f} m, Orientation error: {ori_error:.4f} rad")
+
+                # Clear force after insertion completes
+                if waypoint is nodes["FullInsert"]:
+                    robot.set_target_wrench(force=np.array([0.0, 0.0, 0.0]), torque=np.array([0.0, 0.0, 0.0]))
+
+
+            ############### SWITCHING CONTROLLER CARTESIAN -> JOINT ###############
+            # # Switch to the joint trajectory controller
+            robot.set_target_joint(robot.joint_values)
+            robot.controller_switcher_client.switch_controller("joint_trajectory_controller")
+            time.sleep(1.0)
+
+
+            # Send the joint configuration command
+            robot.joint_trajectory_controller_client.send_joint_config(
+                joint_names=robot.config.joint_names,
+                joint_config=nodes.get("stowaway_transition_joint_config"),
+                time_to_goal=3.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
+                blocking=True         # Wait until motion completes
+            )
+            # Wait for robot to be ready again
+            robot.wait_until_ready()
+            time.sleep(0.5)
+
+            # Send the joint configuration command
+            robot.joint_trajectory_controller_client.send_joint_config(
+                joint_names=robot.config.joint_names,
+                joint_config=nodes.get("stowaway_joint_config"),
+                time_to_goal=3.0,  # 5 seconds to reach home (same as robot.config.time_to_home)
+                blocking=True         # Wait until motion completes
+            )
+            # Wait for robot to be ready again
+            robot.wait_until_ready()
+            time.sleep(1.0)
+
+
+            print("\n  ✓ Current Iteration completed!")
+
+            time.sleep(5)
+        except Exception as e:
+            print(f"ERROR OCCURED: {e}")
+            # Shutdown the robot
+            print("Shutting down...")
+            robot.shutdown()
+            print("Done!")
+
+            # Initialize the robot
+            robot = make_robot("fr3")
+            robot.wait_until_ready()
+
+            # Reset Pose
+            robot.wait_until_ready()
+            robot.home()
+            time.sleep(1.0)
+
+    # print("Stopping trajectory data collection...")
+    # trajectory_data.stop_recording()
+    # if collection_thread:
+    #     collection_thread.join(timeout=1.0)
+    # print(f"Collected {len(trajectory_data.times)} data points")
+
+    # Shutdown the robot
+    print("Shutting down...")
+    robot.shutdown()
+    print("Done!")
+
+    # Display trajectory plots
+    # print("\n" + "="*70)
+    # print("Displaying trajectory plots...")
+    # print("="*70)
+    # plot_trajectory(trajectory_data, title="Peg-in-Hole Insertion Trajectory")
+    # print("\nDisplaying joint space trajectory...")
+    # plot_joint_trajectory(trajectory_data, title="Joint Space Trajectory")
