@@ -216,9 +216,9 @@ if __name__ == "__main__":
         {"switch_config_compliant": "config/control/no_friction_cartesian_impedance.yaml"},
         nodes.get("FullInsert"),
         nodes.get("Pause"),
+        nodes.get("ReadyInsert"),
         # RETRACTION
         {"switch_config": "config/control/default_cartesian_impedance.yaml"},
-        nodes.get("ReadyInsert"),
         nodes.get("Transition2"),
         nodes.get("Transition"),
     ]
@@ -285,6 +285,7 @@ if __name__ == "__main__":
                         time.sleep(waypoint["sleep"])
                         continue
                     elif "switch_config_compliant" in waypoint:
+                        time.sleep(1.0)
                         config_path = waypoint["switch_config_compliant"]
                         print(f"  Switching to config: {config_path}")
                         robot.cartesian_controller_parameters_client.load_param_config(file_path=config_path)
@@ -300,6 +301,7 @@ if __name__ == "__main__":
                         
                         continue
                     elif "switch_config" in waypoint:
+                        time.sleep(1.0)
                         config_path = waypoint["switch_config"]
                         print(f"  Switching to config: {config_path}")
                         robot.cartesian_controller_parameters_client.load_param_config(file_path=config_path)
@@ -361,7 +363,7 @@ if __name__ == "__main__":
             time.sleep(1.0)
 
 
-            print("\n  ✓ Current Iteration completed!")
+            print("  Current Iteration completed")
 
             time.sleep(5)
         except Exception as e:
