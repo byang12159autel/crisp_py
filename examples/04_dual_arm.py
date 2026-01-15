@@ -5,8 +5,7 @@ to the /right/joints_states. But this setup is a bit easier to understand and pl
 """
 
 # %%
-from crisp_py.robot import Robot
-from crisp_py.robot_config import FrankaConfig
+from crisp_py.robot import Robot, FrankaConfig
 
 # %%
 faster_publishing_config = FrankaConfig()
