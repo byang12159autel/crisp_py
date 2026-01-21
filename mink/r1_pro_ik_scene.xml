@@ -28,10 +28,9 @@
   </worldbody>
 
   <!-- 添加关键帧用于初始化 -->
-  <!-- qpos 格式：基座(3) + 躯干(4) + 左臂(7) + 右臂(7) + 轮子相关(3) = 24个自由度 -->
-  <!-- 前3个是基座关节：base_x, base_y, base_yaw -->
+  <!-- qpos 格式：基座(3) + 转向电机(3) + 轮子电机(3) + 躯干(4) + 左臂(7) + 右臂(7) = 27个自由度 -->
+  <!-- 关节顺序: base_x, base_y, base_yaw, steer1-3, wheel1-3, torso1-4, left_arm1-7, right_arm1-7 -->
   <keyframe>
-    <key name="home" qpos="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"/>
+    <key name="home" qpos="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"/>
   </keyframe>
 </mujoco>
-

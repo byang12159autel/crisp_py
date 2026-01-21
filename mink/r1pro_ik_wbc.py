@@ -201,20 +201,20 @@ class R1ProIKController:
         self._initialized = True
     
     def solve(self,
-              current_joint_positions: np.ndarray,
-              left_target: np.ndarray,
+              left_target: Optional[np.ndarray],
               right_target: np.ndarray,
               dt: float = 0.01,
-              damping: float = 1e-1) -> IKResult:
+              damping: float = 1e-1,
+              current_joint_positions: Optional[np.ndarray] = None) -> IKResult:
         """
         求解 IK
         
         Args:
-            current_joint_positions: 当前关节位置（18个：躯干+双臂）
-            left_target: 左手目标 [x, y, z, qw, qx, qy, qz]，相对于 base_link
+            left_target: 左手目标 [x, y, z, qw, qx, qy, qz]，相对于 base_link（可选）
             right_target: 右手目标 [x, y, z, qw, qx, qy, qz]，相对于 base_link
             dt: 时间步长
             damping: QP 阻尼系数
+            current_joint_positions: 当前关节位置（18个：躯干+双臂），如为None则使用内部状态
             
         Returns:
             IKResult: 包含关节位置和底盘速度
@@ -222,10 +222,11 @@ class R1ProIKController:
         if not self._initialized:
             self.initialize(current_joint_positions)
         
-        # 1. 更新内部状态（18个关节：躯干+手臂）
-        self.data.qpos[:self.N_BASE] = 0.0  # 底盘在原点
-        self.data.qpos[self.IDX_TORSO:self.IDX_TORSO + self.N_ARM_TOTAL] = current_joint_positions[:self.N_ARM_TOTAL]
-        mujoco.mj_forward(self.model, self.data)
+        # 1. 更新内部状态（如果提供了外部关节位置）
+        if current_joint_positions is not None:
+            self.data.qpos[:self.N_BASE] = 0.0  # 底盘在原点
+            self.data.qpos[self.IDX_TORSO:self.IDX_TORSO + self.N_ARM_TOTAL] = current_joint_positions[:self.N_ARM_TOTAL]
+            mujoco.mj_forward(self.model, self.data)
         
         # 2. 设置手部目标（相对于 base_link = 世界原点）
         self.left_hand_task.set_target(self._array_to_se3(left_target))
