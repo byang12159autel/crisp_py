@@ -22,3 +22,9 @@ tests/unit/__pycache__
 .venv
 crisp_py/config/__pycache__
 crisp_py/config/__pycache__
+examples/plotter.py
+*.lock
+.vscode/settings.json
+pixi.lock
+crisp_py/config/__pycache__/__init__.cpython-311.pyc
+crisp_py/config/__pycache__/path.cpython-311.pyc
