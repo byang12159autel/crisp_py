@@ -10,3 +10,8 @@
 *CRISP_PY /krɪspi/*, a python package to interface with robots using [CRISP controllers](https://github.com/utiasDSL/crisp_controllers). Check the [project website](https://utiasdsl.github.io/crisp_controllers/) for further information!
 
 ![crisp_py](https://github.com/user-attachments/assets/e4cbf5fd-6ba7-4d7c-917a-bbb78d79ab10)
+
+
+
+pixi install
+pixi shell -e humble
