@@ -77,3 +77,4 @@ crisp_python = { path = ".", editable = true }
 rich = "*"  # For nice prints
 matplotlib = "*"  # to do some plots
 mink = "*"  # For mink package
+loop-rate-limiters = "*"  # Rate limiter package
