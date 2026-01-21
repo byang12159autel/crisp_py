@@ -1,0 +1,37 @@
+<!--
+  R1 Pro IK 控制场景
+  
+  本文件包含原始机器人模型，并添加了用于 IK 控制的 mocap 目标体。
+  mocap 体可以在 MuJoCo 可视化器中拖动，用于设置末端执行器目标位置。
+-->
+<mujoco model="r1_pro_ik_scene">
+  <!-- 包含原始机器人模型 -->
+  <include file="r1_pro.xml"/>
+
+  <!-- ===== Mocap 目标体定义 ===== -->
+  <!-- mocap 是 MuJoCo 中可交互拖动的虚拟物体 -->
+  <worldbody>
+    <!-- 左手目标（绿色球） -->
+    <body name="left_gripper_link_target" mocap="true" pos="0.3 0.3 0.8">
+      <geom type="sphere" size="0.05" rgba="0 1 0 0.8" contype="0" conaffinity="0"/>
+    </body>
+    
+    <!-- 右手目标（蓝色球） -->
+    <body name="right_gripper_link_target" mocap="true" pos="0.3 -0.3 0.8">
+      <geom type="sphere" size="0.05" rgba="0 0 1 0.8" contype="0" conaffinity="0"/>
+    </body>
+    
+    <!-- 质心目标（红色球） -->
+    <body name="com_target" mocap="true" pos="0 0 0.5">
+      <geom type="sphere" size="0.06" rgba="1 0 0 0.8" contype="0" conaffinity="0"/>
+    </body>
+  </worldbody>
+
+  <!-- 添加关键帧用于初始化 -->
+  <!-- qpos 格式：基座(3) + 躯干(4) + 左臂(7) + 右臂(7) + 轮子相关(3) = 24个自由度 -->
+  <!-- 前3个是基座关节：base_x, base_y, base_yaw -->
+  <keyframe>
+    <key name="home" qpos="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"/>
+  </keyframe>
+</mujoco>
+
