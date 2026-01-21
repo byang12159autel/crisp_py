@@ -116,6 +116,15 @@ def main():
             dt = rate.dt
             local_time += dt
 
+            # Update mink configuration from actual robot joint positions (closed-loop feedback)
+            current_q = robot.joint_values
+            if len(current_q) < model_nq:
+                padded_q = np.zeros(model_nq)
+                padded_q[: len(current_q)] = current_q
+                configuration.update(padded_q)
+            else:
+                configuration.update(current_q[:model_nq])
+
             # Compute circular offset in XY plane
             offset = np.array(
                 [
