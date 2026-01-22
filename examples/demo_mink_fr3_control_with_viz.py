@@ -27,18 +27,16 @@ Usage:
 """
 
 import argparse
-import threading
-import time
 from pathlib import Path
 
 import mujoco
-import mujoco.viewer
 import numpy as np
 from loop_rate_limiters import RateLimiter
 
 import mink
 
 from crisp_py.robot import make_robot
+from crisp_py.utils import MuJoCoVisualizer
 
 # Path to MuJoCo model (using Panda model, kinematically similar to FR3)
 _HERE = Path(__file__).parent.parent / "mink" / "examples"
@@ -66,7 +64,6 @@ def converge_ik(configuration, tasks, dt, solver, max_iters):
             return True
     return False
 
-
 def pad_joints(joint_array, target_size):
     """Pad joint array to target size with zeros."""
     if len(joint_array) < target_size:
@@ -74,96 +71,6 @@ def pad_joints(joint_array, target_size):
         padded[: len(joint_array)] = joint_array
         return padded
     return joint_array[:target_size]
-
-
-class SharedState:
-    """Thread-safe shared state for visualization."""
-    def __init__(self):
-        self.lock = threading.Lock()
-        self.cmd_q = np.zeros(7)
-        self.actual_q = np.zeros(7)
-        self.stop_event = threading.Event()
-        self.loop_count = 0
-
-
-def control_loop(args, robot, configuration, tasks, shared_state, vis_data, initial_position, initial_rotation):
-    """Background thread for robot control."""
-    
-    # Circular trajectory parameters
-    amplitude = 0.10  # 10cm radius
-    frequency = 0.2  # 0.2 Hz (5 second period)
-    
-    local_time = 0.0
-    rate = RateLimiter(frequency=CONTROL_FREQ, warn=False)
-    model_nq = configuration.model.nq
-    
-    print(f"\nStarting circular trajectory (amplitude={amplitude}m, freq={frequency}Hz)")
-    print("Press Ctrl+C or close viewer window to stop\n")
-    
-    try:
-        while not shared_state.stop_event.is_set():
-            dt = rate.dt
-            local_time += dt
-            shared_state.loop_count += 1
-            
-            # 1. Update mink configuration from actual robot joint positions (closed-loop feedback)
-            current_q = robot.joint_values
-            padded_q = pad_joints(current_q, model_nq)
-            configuration.update(padded_q)
-            
-            # 2. Compute circular offset in XY plane
-            offset = np.array([
-                amplitude * np.cos(2 * np.pi * frequency * local_time),
-                amplitude * np.sin(2 * np.pi * frequency * local_time),
-                0.0,
-            ])
-            
-            # 3. Create target SE3 pose
-            target_position = initial_position + offset
-            target_SE3 = mink.SE3.from_rotation_and_translation(
-                initial_rotation, target_position
-            )
-            
-            # 4. Set IK target and solve
-            tasks[0].set_target(target_SE3)
-            converge_ik(configuration, tasks, dt, SOLVER, MAX_ITERS)
-            
-            # 5. Send joint positions to robot (only first 7 for FR3)
-            q_target = configuration.q[:7]
-            robot.set_target_joint(q_target)
-            
-            # 6. Update shared state for visualization
-            if args.visualize:
-                with shared_state.lock:
-                    shared_state.cmd_q[:] = q_target
-                    shared_state.actual_q[:] = current_q
-                    
-                    # Update visualization data based on mode
-                    if args.show_mode == 'commanded':
-                        vis_data.qpos[:] = configuration.q
-                    elif args.show_mode == 'actual':
-                        vis_data.qpos[:] = padded_q
-                    else:  # 'both' - show actual, print error
-                        vis_data.qpos[:] = padded_q
-                        
-                        # Print tracking error to console (every second)
-                        if shared_state.loop_count % int(CONTROL_FREQ) == 0:
-                            joint_error = np.linalg.norm(q_target - current_q)
-                            ee_err = tasks[0].compute_error(configuration)
-                            pos_error = np.linalg.norm(ee_err[:3])
-                            ori_error = np.linalg.norm(ee_err[3:])
-                            print(f"Joint error: {joint_error*1000:.2f} mrad | "
-                                  f"Pos error: {pos_error*1000:.2f} mm | "
-                                  f"Ori error: {ori_error:.4f}")
-            
-            rate.sleep()
-            
-    except Exception as e:
-        print(f"\nError in control loop: {e}")
-        import traceback
-        traceback.print_exc()
-    finally:
-        print("Control loop stopping...")
 
 
 def main():
@@ -222,59 +129,84 @@ def main():
     print(f"Initial end-effector position: {initial_position}")
     
     # 4. Setup visualization if requested
-    vis_data = None
-    viewer = None
-    
+    visualizer = None
     if args.visualize:
-        print(f"Starting visualization (mode: {args.show_mode})...")
-        vis_data = mujoco.MjData(model)
-        vis_data.qpos[:] = padded_q  # Initialize with current state
-        viewer = mujoco.viewer.launch_passive(model, vis_data)
-        print("Viewer launched!")
+        print(f"\nStarting visualization (mode: {args.show_mode})...")
+        visualizer = MuJoCoVisualizer(model, padded_q, mode=args.show_mode)
+        visualizer.set_control_frequency(CONTROL_FREQ)
+        visualizer.start()
+    
+    # 5. Circular trajectory parameters
+    amplitude = 0.10  # 10cm radius
+    frequency = 0.2  # 0.2 Hz (5 second period)
+    
+    local_time = 0.0
+    rate = RateLimiter(frequency=CONTROL_FREQ, warn=False)
+    
+    print(f"\nStarting circular trajectory (amplitude={amplitude}m, freq={frequency}Hz)")
+    print("Press Ctrl+C or close viewer window to stop\n")
+    
+    try:
+        while True:
+            # Check if visualizer is still running (if enabled)
+            if visualizer is not None and not visualizer.is_running():
+                print("Viewer window closed")
+                break
+                
+            dt = rate.dt
+            local_time += dt
+            
+            # 1. Update mink configuration from actual robot joint positions (closed-loop feedback)
+            current_q = robot.joint_values
+            padded_q = pad_joints(current_q, model_nq)
+            configuration.update(padded_q)
+            
+            # 2. Compute circular offset in XY plane
+            offset = np.array([
+                amplitude * np.cos(2 * np.pi * frequency * local_time),
+                amplitude * np.sin(2 * np.pi * frequency * local_time),
+                0.0,
+            ])
+            
+            # 3. Create target SE3 pose
+            target_position = initial_position + offset
+            target_SE3 = mink.SE3.from_rotation_and_translation(
+                initial_rotation, target_position
+            )
+            
+            # 4. Set IK target and solve
+            end_effector_task.set_target(target_SE3)
+            converge_ik(configuration, tasks, dt, SOLVER, MAX_ITERS)
+            
+            # 5. Send joint positions to robot (only first 7 for FR3)
+            q_target = configuration.q[:7]
+            robot.set_target_joint(q_target)
+            
+            # 6. Update visualization if enabled
+            if visualizer is not None:
+                visualizer.update_commanded(q_target)
+                visualizer.update_actual(current_q)
+                
+                # Compute and report tracking errors for 'both' mode
+                if args.show_mode == 'both':
+                    joint_error = np.linalg.norm(q_target - current_q)
+                    ee_err = end_effector_task.compute_error(configuration)
+                    pos_error = np.linalg.norm(ee_err[:3])
+                    ori_error = np.linalg.norm(ee_err[3:])
+                    visualizer.set_error_metrics(joint_error, pos_error, ori_error)
+            
+            rate.sleep()
+            
+    except KeyboardInterrupt:
+        print("\nKeyboard interrupt received...")
+    finally:
+        # 7. Cleanup
+        if visualizer is not None:
+            visualizer.stop()
         
-        if args.show_mode == 'commanded':
-            print("  → Showing commanded robot (IK solution)")
-        elif args.show_mode == 'actual':
-            print("  → Showing actual robot (feedback state)")
-        else:
-            print("  → Showing actual robot + printing tracking error")
-    
-    # 5. Create shared state and start control loop
-    shared_state = SharedState()
-    
-    if args.visualize:
-        # Start control loop in background thread
-        control_thread = threading.Thread(
-            target=control_loop,
-            args=(args, robot, configuration, tasks, shared_state, vis_data, initial_position, initial_rotation),
-            daemon=True
-        )
-        control_thread.start()
-        
-        # Main thread runs visualization loop
-        try:
-            while viewer.is_running() and not shared_state.stop_event.is_set():
-                with shared_state.lock:
-                    mujoco.mj_forward(model, vis_data)
-                viewer.sync()
-                time.sleep(1/60)  # 60 FPS
-        except KeyboardInterrupt:
-            print("\nKeyboard interrupt received...")
-        finally:
-            print("\nStopping control loop...")
-            shared_state.stop_event.set()
-            control_thread.join(timeout=2.0)
-    else:
-        # Run control loop in main thread (no visualization)
-        try:
-            control_loop(args, robot, configuration, tasks, shared_state, vis_data, initial_position, initial_rotation)
-        except KeyboardInterrupt:
-            print("\nKeyboard interrupt received...")
-    
-    # 6. Cleanup
-    print("Shutting down robot...")
-    robot.shutdown()
-    print("Robot shutdown complete.")
+        print("Shutting down robot...")
+        robot.shutdown()
+        print("Robot shutdown complete.")
 
 
 if __name__ == "__main__":
