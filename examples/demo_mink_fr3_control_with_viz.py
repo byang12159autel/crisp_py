@@ -39,8 +39,7 @@ from crisp_py.robot import make_robot
 from crisp_py.utils import MuJoCoVisualizer
 
 # Path to MuJoCo model (using Panda model, kinematically similar to FR3)
-_HERE = Path(__file__).parent.parent / "mink" / "examples"
-_XML = _HERE / "franka_emika_panda" / "mjx_scene.xml"
+_XML = Path("/home/ben/crisp_framework/crisp_controllers_demos/crisp_controllers_robot_demos/config/fr3/scene.xml")
 
 # IK configuration
 SOLVER = "daqp"
